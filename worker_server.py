@@ -7,8 +7,13 @@ import segmentacao_pb2_grpc
 
 from slic_processor import aplicar_slic, bytes_para_array, array_para_bytes
 
+from lamport_clock import LamportClock
+
 
 class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
+    
+    def __init__(self):
+        self.clock = LamportClock()
 
     def Status(self, request, context):
         return segmentacao_pb2.StatusResponse(
@@ -17,7 +22,12 @@ class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
         )
 
     def ProcessarBloco(self, request, context):
-        print(f"Recebi o bloco {request.id_bloco}")
+        self.clock.update(request.timestamp)
+        
+        print(
+            f"[t={self.clock.get_time()}] "
+            f"Recebi o bloco {request.id_bloco}"
+        )
 
         bloco_array = bytes_para_array(
             request.imagem,
@@ -26,6 +36,7 @@ class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
         )
 
         bloco_segmentado = aplicar_slic(bloco_array)
+        self.clock.increment()
 
         bloco_segmentado_bytes = array_para_bytes(bloco_segmentado)
 
@@ -33,7 +44,8 @@ class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
             id_bloco=request.id_bloco,
             largura=request.largura,
             altura=request.altura,
-            imagem_segmentada=bloco_segmentado_bytes
+            imagem_segmentada=bloco_segmentado_bytes,
+            timestamp=self.clock.get_time()
         )
 
 

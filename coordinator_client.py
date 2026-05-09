@@ -6,6 +6,8 @@ import time
 import segmentacao_pb2
 import segmentacao_pb2_grpc
 
+from lamport_clock import LamportClock
+
 
 WORKERS = [
     "192.168.0.15:50051",
@@ -36,7 +38,12 @@ def dividir_imagem_em_blocos(imagem_array, quantidade_blocos):
     return blocos
 
 
-def enviar_bloco_para_worker(worker_address, id_bloco, bloco):
+def enviar_bloco_para_worker(worker_address, id_bloco, bloco, clock):
+    
+    print(
+        f"[t={clock.get_time()}] "
+        f"Enviando bloco {id_bloco} para {worker_address}"
+    )
     canal = grpc.insecure_channel(
         worker_address,
         options=[
@@ -53,10 +60,12 @@ def enviar_bloco_para_worker(worker_address, id_bloco, bloco):
         id_bloco=id_bloco,
         largura=largura,
         altura=altura,
-        imagem=Image.fromarray(bloco.astype(np.uint8), "RGB").tobytes()
+        imagem=Image.fromarray(bloco.astype(np.uint8), "RGB").tobytes(),
+        timestamp=clock.get_time()
     )
 
     response = stub.ProcessarBloco(request)
+    clock.update(response.timestamp)
 
     bloco_segmentado = Image.frombytes(
         "RGB",
@@ -69,6 +78,7 @@ def enviar_bloco_para_worker(worker_address, id_bloco, bloco):
 
 def main():
     inicio_tempo = time.time()
+    clock = LamportClock()
 
     imagem = Image.open(CAMINHO_IMAGEM).convert("RGB")
     imagem_array = np.array(imagem)
@@ -78,13 +88,14 @@ def main():
 
     resultados = []
 
-    for worker, (id_bloco, inicio, fim, bloco) in zip(WORKERS, blocos):
-        print(f"Enviando bloco {id_bloco} para {worker}")
+    for worker, (id_bloco, inicio, fim, bloco) in zip(WORKERS, blocos):        
+        clock.increment()
 
         bloco_segmentado = enviar_bloco_para_worker(
             worker,
             id_bloco,
-            bloco
+            bloco,
+            clock
         )
 
         resultados.append((inicio, fim, bloco_segmentado))

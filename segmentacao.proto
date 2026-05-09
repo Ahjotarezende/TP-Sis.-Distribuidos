@@ -12,6 +12,7 @@ message BlocoImagemRequest {
   int32 largura = 2;
   int32 altura = 3;
   bytes imagem = 4;
+  int32 timestamp = 5;
 }
 
 message BlocoImagemResponse {
@@ -19,6 +20,7 @@ message BlocoImagemResponse {
   int32 largura = 2;
   int32 altura = 3;
   bytes imagem_segmentada = 4;
+  int32 timestamp = 5;
 }
 
 message StatusRequest {}
