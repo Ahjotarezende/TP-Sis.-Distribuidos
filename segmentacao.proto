@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package segmentacao;
+
+service SegmentacaoService {
+  rpc ProcessarBloco (BlocoImagemRequest) returns (BlocoImagemResponse);
+  rpc Status (StatusRequest) returns (StatusResponse);
+}
+
+message BlocoImagemRequest {
+  int32 id_bloco = 1;
+  int32 largura = 2;
+  int32 altura = 3;
+  bytes imagem = 4;
+}
+
+message BlocoImagemResponse {
+  int32 id_bloco = 1;
+  int32 largura = 2;
+  int32 altura = 3;
+  bytes imagem_segmentada = 4;
+}
+
+message StatusRequest {}
+
+message StatusResponse {
+  string status = 1;
+  string nome_maquina = 2;
+}
