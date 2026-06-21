@@ -24,21 +24,21 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11segmentacao.proto\x12\x0bsegmentacao\"W\n\x12\x42locoImagemRequest\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06\x61ltura\x18\x03 \x01(\x05\x12\x0e\n\x06imagem\x18\x04 \x01(\x0c\"c\n\x13\x42locoImagemResponse\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06\x61ltura\x18\x03 \x01(\x05\x12\x19\n\x11imagem_segmentada\x18\x04 \x01(\x0c\"\x0f\n\rStatusRequest\"6\n\x0eStatusResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x14\n\x0cnome_maquina\x18\x02 \x01(\t2\xac\x01\n\x12SegmentacaoService\x12S\n\x0eProcessarBloco\x12\x1f.segmentacao.BlocoImagemRequest\x1a .segmentacao.BlocoImagemResponse\x12\x41\n\x06Status\x12\x1a.segmentacao.StatusRequest\x1a\x1b.segmentacao.StatusResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11segmentacao.proto\x12\x0bsegmentacao\"\x94\x01\n\x12\x42locoImagemRequest\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06\x61ltura\x18\x03 \x01(\x05\x12\x0e\n\x06imagem\x18\x04 \x01(\x0c\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\x12\x13\n\x0bn_segmentos\x18\x06 \x01(\x05\x12\x13\n\x0b\x63ompactness\x18\x07 \x01(\x02\"v\n\x13\x42locoImagemResponse\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06\x61ltura\x18\x03 \x01(\x05\x12\x19\n\x11imagem_segmentada\x18\x04 \x01(\x0c\x12\x11\n\ttimestamp\x18\x05 \x01(\x05\"\x0f\n\rStatusRequest\"6\n\x0eStatusResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x14\n\x0cnome_maquina\x18\x02 \x01(\t2\xac\x01\n\x12SegmentacaoService\x12S\n\x0eProcessarBloco\x12\x1f.segmentacao.BlocoImagemRequest\x1a .segmentacao.BlocoImagemResponse\x12\x41\n\x06Status\x12\x1a.segmentacao.StatusRequest\x1a\x1b.segmentacao.StatusResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'segmentacao_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_BLOCOIMAGEMREQUEST']._serialized_start=34
-  _globals['_BLOCOIMAGEMREQUEST']._serialized_end=121
-  _globals['_BLOCOIMAGEMRESPONSE']._serialized_start=123
-  _globals['_BLOCOIMAGEMRESPONSE']._serialized_end=222
-  _globals['_STATUSREQUEST']._serialized_start=224
-  _globals['_STATUSREQUEST']._serialized_end=239
-  _globals['_STATUSRESPONSE']._serialized_start=241
-  _globals['_STATUSRESPONSE']._serialized_end=295
-  _globals['_SEGMENTACAOSERVICE']._serialized_start=298
-  _globals['_SEGMENTACAOSERVICE']._serialized_end=470
+  _globals['_BLOCOIMAGEMREQUEST']._serialized_start=35
+  _globals['_BLOCOIMAGEMREQUEST']._serialized_end=183
+  _globals['_BLOCOIMAGEMRESPONSE']._serialized_start=185
+  _globals['_BLOCOIMAGEMRESPONSE']._serialized_end=303
+  _globals['_STATUSREQUEST']._serialized_start=305
+  _globals['_STATUSREQUEST']._serialized_end=320
+  _globals['_STATUSRESPONSE']._serialized_start=322
+  _globals['_STATUSRESPONSE']._serialized_end=376
+  _globals['_SEGMENTACAOSERVICE']._serialized_start=379
+  _globals['_SEGMENTACAOSERVICE']._serialized_end=551
 # @@protoc_insertion_point(module_scope)

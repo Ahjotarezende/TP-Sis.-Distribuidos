@@ -1,30 +1,29 @@
 import numpy as np
-from skimage.segmentation import slic, mark_boundaries
-from skimage.util import img_as_float
+from skimage import segmentation, color
+import numpy as np
 from PIL import Image
 
 
-def aplicar_slic(imagem_array: np.ndarray) -> np.ndarray:
-    """
-    Recebe um bloco RGB em formato NumPy e devolve o bloco segmentado.
-    """
+def aplicar_slic(
+    imagem_array: np.ndarray,
+    n_segmentos: int,
+    compactness: float
+) -> np.ndarray:
 
-    imagem_float = img_as_float(imagem_array)
-
-    segmentos = slic(
-        imagem_float,
-        n_segments=100,
-        compactness=10,
-        sigma=1,
-        start_label=1,
-        channel_axis=-1
+    segmentos = segmentation.slic(
+        imagem_array,
+        n_segments=n_segmentos,
+        compactness=compactness,
+        start_label=1
     )
 
-    imagem_com_bordas = mark_boundaries(imagem_float, segmentos)
+    imagem_processada = color.label2rgb(
+        segmentos,
+        imagem_array,
+        kind="avg"
+    )
 
-    imagem_saida = (imagem_com_bordas * 255).astype(np.uint8)
-
-    return imagem_saida
+    return np.clip(imagem_processada, 0, 255).astype(np.uint8)
 
 
 def bytes_para_array(imagem_bytes: bytes, largura: int, altura: int) -> np.ndarray:

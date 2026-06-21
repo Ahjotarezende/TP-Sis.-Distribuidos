@@ -1,6 +1,7 @@
 import grpc
 from concurrent import futures
 import socket
+import sys
 
 import segmentacao_pb2
 import segmentacao_pb2_grpc
@@ -11,7 +12,7 @@ from lamport_clock import LamportClock
 
 
 class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
-    
+
     def __init__(self):
         self.clock = LamportClock()
 
@@ -23,7 +24,7 @@ class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
 
     def ProcessarBloco(self, request, context):
         self.clock.update(request.timestamp)
-        
+
         print(
             f"[t={self.clock.get_time()}] "
             f"Recebi o bloco {request.id_bloco}"
@@ -35,7 +36,7 @@ class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
             request.altura
         )
 
-        bloco_segmentado = aplicar_slic(bloco_array)
+        bloco_segmentado = aplicar_slic(bloco_array,request.n_segmentos,request.compactness)
         self.clock.increment()
 
         bloco_segmentado_bytes = array_para_bytes(bloco_segmentado)
@@ -49,7 +50,7 @@ class SegmentacaoService(segmentacao_pb2_grpc.SegmentacaoServiceServicer):
         )
 
 
-def iniciar_servidor():
+def iniciar_servidor(porta):
     servidor = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
         options=[
@@ -63,12 +64,15 @@ def iniciar_servidor():
         servidor
     )
 
-    servidor.add_insecure_port("[::]:50051")
+    servidor.add_insecure_port(f"[::]:{porta}")
     servidor.start()
 
-    print("Worker gRPC rodando na porta 50051...")
+    print(f"Worker gRPC rodando na porta {porta}...")
     servidor.wait_for_termination()
 
 
 if __name__ == "__main__":
-    iniciar_servidor()
+    # Uso: python worker_server.py [porta]
+    # Se nao passar nada, usa 50051 como padrao
+    porta = sys.argv[1] if len(sys.argv) > 1 else "50051"
+    iniciar_servidor(porta)

@@ -8,11 +8,14 @@ service SegmentacaoService {
 }
 
 message BlocoImagemRequest {
-  int32 id_bloco = 1;
-  int32 largura = 2;
-  int32 altura = 3;
-  bytes imagem = 4;
-  int32 timestamp = 5;
+    int32 id_bloco = 1;
+    int32 largura = 2;
+    int32 altura = 3;
+    bytes imagem = 4;
+    int64 timestamp = 5;
+
+    int32 n_segmentos = 6;
+    float compactness = 7;
 }
 
 message BlocoImagemResponse {
@@ -21,6 +24,7 @@ message BlocoImagemResponse {
   int32 altura = 3;
   bytes imagem_segmentada = 4;
   int32 timestamp = 5;
+
 }
 
 message StatusRequest {}
