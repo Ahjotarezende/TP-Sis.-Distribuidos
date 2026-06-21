@@ -16,7 +16,7 @@ WORKERS = [
 CAMINHO_IMAGEM = "teste.jpg"
 CAMINHO_SAIDA = "resultado_segmentado.jpg"
 
-MAXIMO_SEGMENTOS = 300
+MAXIMO_SEGMENTOS = 1000
 COMPACTNESS = 10.0
 
 
@@ -170,16 +170,34 @@ def enviar_bloco_com_failover(
     return None
 
 
-def main():
+def processar_imagem_distribuida(
+    imagem_array,
+    workers=None,
+    max_segmentos=MAXIMO_SEGMENTOS,
+    compactness=COMPACTNESS,
+    progresso_callback=None
+):
+    """
+    Núcleo do processamento distribuído, reutilizável tanto pelo
+    script de linha de comando (main) quanto pelo web service.
+
+    progresso_callback (opcional): função chamada como
+    progresso_callback(blocos_concluidos, blocos_totais) a cada
+    bloco finalizado, para permitir acompanhar o andamento (ex: via
+    endpoint de status do web service).
+
+    Retorna: (imagem_final_array, tempo_total_segundos) ou (None, tempo)
+    em caso de falha total.
+    """
 
     inicio_tempo = time.time()
 
+    if workers is None:
+        workers = WORKERS
+
     clock = LamportClock()
 
-    imagem = Image.open(CAMINHO_IMAGEM).convert("RGB")
-    imagem_array = np.array(imagem)
-
-    quantidade_blocos = len(WORKERS)
+    quantidade_blocos = len(workers)
 
     blocos = dividir_imagem_em_blocos(
         imagem_array,
@@ -188,26 +206,28 @@ def main():
 
     segmentos_por_bloco = max(
         1,
-        MAXIMO_SEGMENTOS // quantidade_blocos
+        max_segmentos // quantidade_blocos
     )
 
     resultados = []
 
-    for worker, (id_bloco, inicio, fim, bloco) in zip(WORKERS, blocos):
+    for indice, (worker, (id_bloco, inicio, fim, bloco)) in enumerate(
+        zip(workers, blocos)
+    ):
 
         bloco_segmentado = enviar_bloco_com_failover(
             id_bloco=id_bloco,
             bloco=bloco,
             clock=clock,
-            lista_workers=WORKERS,
+            lista_workers=workers,
             worker_preferido=worker,
             n_segmentos=segmentos_por_bloco,
-            compactness=COMPACTNESS
+            compactness=compactness
         )
 
         if bloco_segmentado is None:
             print("Abortando processamento.")
-            return
+            return None, time.time() - inicio_tempo
 
         resultados.append(
             (
@@ -216,6 +236,9 @@ def main():
                 bloco_segmentado
             )
         )
+
+        if progresso_callback:
+            progresso_callback(indice + 1, quantidade_blocos)
 
     resultados.sort(key=lambda x: x[0])
 
@@ -226,17 +249,25 @@ def main():
         ]
     )
 
-    Image.fromarray(imagem_final).save(
-        CAMINHO_SAIDA
-    )
+    tempo_total = time.time() - inicio_tempo
 
-    fim_tempo = time.time()
+    return imagem_final, tempo_total
+
+
+def main():
+
+    imagem = Image.open(CAMINHO_IMAGEM).convert("RGB")
+    imagem_array = np.array(imagem)
+
+    imagem_final, tempo_total = processar_imagem_distribuida(imagem_array)
+
+    if imagem_final is None:
+        return
+
+    Image.fromarray(imagem_final).save(CAMINHO_SAIDA)
 
     print(f"\nImagem salva em: {CAMINHO_SAIDA}")
-    print(
-        f"Tempo total: "
-        f"{fim_tempo - inicio_tempo:.2f} segundos"
-    )
+    print(f"Tempo total: {tempo_total:.2f} segundos")
 
 
 if __name__ == "__main__":
