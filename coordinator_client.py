@@ -2,15 +2,16 @@ import grpc
 import numpy as np
 from PIL import Image
 import time
+import threading
 
 import segmentacao_pb2
 import segmentacao_pb2_grpc
-
 from lamport_clock import LamportClock
 
 WORKERS = [
     "localhost:50051",
-    "localhost:50052"
+    "localhost:50052",
+    "localhost:50053",
 ]
 
 CAMINHO_IMAGEM = "teste.jpg"
@@ -19,255 +20,251 @@ CAMINHO_SAIDA = "resultado_segmentado.jpg"
 MAXIMO_SEGMENTOS = 1000
 COMPACTNESS = 10.0
 
+PEER_TIMEOUT = 5
+ELECTION_WAIT = 20.0
 
-def dividir_imagem_em_blocos(imagem_array, quantidade_blocos):
-    altura = imagem_array.shape[0]
+_lock = threading.Lock()
+_leader_address: str | None = None
+_leader_id: int | None = None
+
+
+def _get_id(address: str) -> int:
+    return int(address.split(":")[1])
+
+
+def _make_channel(address: str):
+    return grpc.insecure_channel(
+        address,
+        options=[
+            ("grpc.max_send_message_length", 50 * 1024 * 1024),
+            ("grpc.max_receive_message_length", 50 * 1024 * 1024),
+        ],
+    )
+
+def _aguardar_workers(workers, tentativas=10, intervalo=2.0):
+    online = []
+    for w in workers:
+        for _ in range(tentativas):
+            try:
+                ch = _make_channel(w)
+                stub = segmentacao_pb2_grpc.SegmentacaoServiceStub(ch)
+                stub.Status(segmentacao_pb2.StatusRequest(), timeout=PEER_TIMEOUT)
+                ch.close()
+                online.append(w)
+                print(f"[Init] {w} online")
+                break
+            except grpc.RpcError:
+                time.sleep(intervalo)
+        else:
+            print(f"[Init] {w} ignorado")
+    return online
+
+def _disparar_eleicao(workers_online):
+    global _leader_address, _leader_id
+
+    print("\n[Eleição] iniciando...")
+
+    for w in workers_online:
+        try:
+            ch = _make_channel(w)
+            stub = segmentacao_pb2_grpc.SegmentacaoServiceStub(ch)
+            stub.Election(segmentacao_pb2.ElectionRequest(sender_id=0), timeout=PEER_TIMEOUT)
+            ch.close()
+        except grpc.RpcError:
+            pass
+
+    deadline = time.time() + ELECTION_WAIT
+    while time.time() < deadline:
+        with _lock:
+            if _leader_address:
+                return _leader_address
+        time.sleep(0.5)
+
+    if workers_online:
+        lider = max(workers_online, key=_get_id)
+        with _lock:
+            _leader_address = lider
+            _leader_id = _get_id(lider)
+        return lider
+
+    return None
+
+
+def _re_eleger(workers_online):
+    global _leader_address, _leader_id
+
+    with _lock:
+        lider = _leader_address
+
+    if not lider:
+        return _disparar_eleicao(workers_online)
+
+    try:
+        ch = _make_channel(lider)
+        stub = segmentacao_pb2_grpc.SegmentacaoServiceStub(ch)
+        stub.Status(segmentacao_pb2.StatusRequest(), timeout=PEER_TIMEOUT)
+        ch.close()
+        return lider
+    except grpc.RpcError:
+        with _lock:
+            _leader_address = None
+            _leader_id = None
+
+        return _disparar_eleicao([w for w in workers_online if w != lider])
+
+def dividir_imagem_em_blocos(img, n):
+    h = img.shape[0]
+    step = h // n
     blocos = []
 
-    linhas_por_bloco = altura // quantidade_blocos
-
-    for i in range(quantidade_blocos):
-        inicio = i * linhas_por_bloco
-
-        if i == quantidade_blocos - 1:
-            fim = altura
-        else:
-            fim = (i + 1) * linhas_por_bloco
-
-        bloco = imagem_array[inicio:fim, :, :]
-        blocos.append((i, inicio, fim, bloco))
+    for i in range(n):
+        ini = i * step
+        fim = h if i == n - 1 else (i + 1) * step
+        blocos.append((i, ini, fim, img[ini:fim]))
 
     return blocos
 
-
-def _tentar_worker(
-    worker_address,
-    id_bloco,
-    bloco,
-    clock,
-    n_segmentos,
-    compactness,
-    max_tentativas=3
-):
-    """Tenta processar o bloco em um worker com retry."""
-
-    for tentativa in range(max_tentativas):
-
+def _tentar_worker(addr, id_bloco, bloco, clock, n_seg, comp, max_tent=3):
+    for t in range(max_tent):
         canal = None
-
         try:
-
-            print(
-                f"Tentativa {tentativa + 1} - "
-                f"Enviando bloco {id_bloco} para {worker_address}"
-            )
-
-            canal = grpc.insecure_channel(
-                worker_address,
-                options=[
-                    ("grpc.max_send_message_length", 50 * 1024 * 1024),
-                    ("grpc.max_receive_message_length", 50 * 1024 * 1024),
-                ]
-            )
-
+            canal = _make_channel(addr)
             stub = segmentacao_pb2_grpc.SegmentacaoServiceStub(canal)
 
-            altura, largura, _ = bloco.shape
+            h, w, _ = bloco.shape
 
-            request = segmentacao_pb2.BlocoImagemRequest(
+            req = segmentacao_pb2.BlocoImagemRequest(
                 id_bloco=id_bloco,
-                largura=largura,
-                altura=altura,
+                largura=w,
+                altura=h,
                 imagem=bloco.tobytes(),
                 timestamp=clock.get_time(),
-                n_segmentos=n_segmentos,
-                compactness=compactness
+                n_segmentos=n_seg,
+                compactness=comp,
             )
 
-            response = stub.ProcessarBloco(
-                request,
-                timeout=30
-            )
+            resp = stub.ProcessarBloco(req, timeout=30)
 
-            clock.update(response.timestamp)
+            clock.update(resp.timestamp)
 
-            bloco_segmentado = Image.frombytes(
+            img = Image.frombytes(
                 "RGB",
-                (response.largura, response.altura),
-                response.imagem_segmentada
+                (resp.largura, resp.altura),
+                resp.imagem_segmentada,
             )
 
-            return np.array(bloco_segmentado)
+            return np.array(img)
 
-        except grpc.RpcError as e:
-
-            print(
-                f"Falha na tentativa {tentativa + 1} "
-                f"em {worker_address}: {e.code()}"
-            )
-
-            if tentativa < max_tentativas - 1:
-                print("Tentando novamente...")
-                time.sleep(2)
-            else:
-                print(f"Worker {worker_address} esgotou as tentativas.")
-                return None
+        except grpc.RpcError:
+            time.sleep(2)
 
         finally:
             if canal:
                 canal.close()
 
+    return None
 
 def enviar_bloco_com_failover(
     id_bloco,
     bloco,
     clock,
-    lista_workers,
-    worker_preferido,
-    n_segmentos,
-    compactness
+    workers,
+    preferido,
+    n_seg,
+    comp,
 ):
+    with _lock:
+        lider = _leader_address
 
-    ordem_workers = [
-        worker_preferido
-    ] + [
-        w for w in lista_workers
-        if w != worker_preferido
-    ]
+    ordem = [preferido]
 
-    for worker_address in ordem_workers:
+    if lider and lider != preferido:
+        ordem.append(lider)
 
+    ordem += [w for w in workers if w not in ordem]
+
+    for w in ordem:
         clock.increment()
 
-        resultado = _tentar_worker(
-            worker_address,
-            id_bloco,
-            bloco,
-            clock,
-            n_segmentos,
-            compactness
-        )
+        res = _tentar_worker(w, id_bloco, bloco, clock, n_seg, comp)
 
-        if resultado is not None:
+        if res is not None:
+            return res
 
-            if worker_address != worker_preferido:
-                print(
-                    f"Failover bem-sucedido: "
-                    f"bloco {id_bloco} -> {worker_address}"
-                )
-
-            return resultado
-
-        print(
-            f"Worker {worker_address} indisponível."
-        )
-
-    print(
-        f"ERRO CRÍTICO: nenhum worker conseguiu "
-        f"processar o bloco {id_bloco}."
-    )
+        if w == lider:
+            threading.Thread(
+                target=_re_eleger,
+                args=(workers,),
+                daemon=True,
+            ).start()
 
     return None
-
 
 def processar_imagem_distribuida(
     imagem_array,
     workers=None,
     max_segmentos=MAXIMO_SEGMENTOS,
     compactness=COMPACTNESS,
-    progresso_callback=None
+    progresso_callback=None,
 ):
-    """
-    Núcleo do processamento distribuído, reutilizável tanto pelo
-    script de linha de comando (main) quanto pelo web service.
-
-    progresso_callback (opcional): função chamada como
-    progresso_callback(blocos_concluidos, blocos_totais) a cada
-    bloco finalizado, para permitir acompanhar o andamento (ex: via
-    endpoint de status do web service).
-
-    Retorna: (imagem_final_array, tempo_total_segundos) ou (None, tempo)
-    em caso de falha total.
-    """
-
-    inicio_tempo = time.time()
+    inicio = time.time()
 
     if workers is None:
         workers = WORKERS
 
+    workers_online = _aguardar_workers(workers)
+    if not workers_online:
+        return None, 0
+
+    _disparar_eleicao(workers_online)
+
     clock = LamportClock()
 
-    quantidade_blocos = len(workers)
-
-    blocos = dividir_imagem_em_blocos(
-        imagem_array,
-        quantidade_blocos
-    )
-
-    segmentos_por_bloco = max(
-        1,
-        max_segmentos // quantidade_blocos
-    )
+    blocos = dividir_imagem_em_blocos(imagem_array, len(workers_online))
+    seg_por_bloco = max(1, max_segmentos // len(workers_online))
 
     resultados = []
 
-    for indice, (worker, (id_bloco, inicio, fim, bloco)) in enumerate(
-        zip(workers, blocos)
-    ):
+    for i, (worker, (idb, ini, fim, bloco)) in enumerate(zip(workers_online, blocos)):
 
-        bloco_segmentado = enviar_bloco_com_failover(
-            id_bloco=id_bloco,
-            bloco=bloco,
-            clock=clock,
-            lista_workers=workers,
-            worker_preferido=worker,
-            n_segmentos=segmentos_por_bloco,
-            compactness=compactness
+        res = enviar_bloco_com_failover(
+            idb,
+            bloco,
+            clock,
+            workers_online,
+            worker,
+            seg_por_bloco,
+            compactness,
         )
 
-        if bloco_segmentado is None:
-            print("Abortando processamento.")
-            return None, time.time() - inicio_tempo
+        if res is None:
+            return None, time.time() - inicio
 
-        resultados.append(
-            (
-                inicio,
-                fim,
-                bloco_segmentado
-            )
-        )
+        resultados.append((ini, fim, res))
 
         if progresso_callback:
-            progresso_callback(indice + 1, quantidade_blocos)
+            progresso_callback(i + 1, len(workers_online))
 
     resultados.sort(key=lambda x: x[0])
 
-    imagem_final = np.vstack(
-        [
-            bloco
-            for _, _, bloco in resultados
-        ]
-    )
+    final = np.vstack([b for _, _, b in resultados])
 
-    tempo_total = time.time() - inicio_tempo
-
-    return imagem_final, tempo_total
-
+    return final, time.time() - inicio
 
 def main():
+    img = Image.open(CAMINHO_IMAGEM).convert("RGB")
+    arr = np.array(img)
 
-    imagem = Image.open(CAMINHO_IMAGEM).convert("RGB")
-    imagem_array = np.array(imagem)
+    final, tempo = processar_imagem_distribuida(arr)
 
-    imagem_final, tempo_total = processar_imagem_distribuida(imagem_array)
-
-    if imagem_final is None:
+    if final is None:
+        print("Falha geral")
         return
 
-    Image.fromarray(imagem_final).save(CAMINHO_SAIDA)
+    Image.fromarray(final).save(CAMINHO_SAIDA)
 
-    print(f"\nImagem salva em: {CAMINHO_SAIDA}")
-    print(f"Tempo total: {tempo_total:.2f} segundos")
+    print(f"OK -> {CAMINHO_SAIDA}")
+    print(f"Tempo: {tempo:.2f}s")
 
 
 if __name__ == "__main__":

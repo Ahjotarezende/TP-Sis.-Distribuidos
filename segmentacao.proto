@@ -5,17 +5,18 @@ package segmentacao;
 service SegmentacaoService {
   rpc ProcessarBloco (BlocoImagemRequest) returns (BlocoImagemResponse);
   rpc Status (StatusRequest) returns (StatusResponse);
+  rpc Election (ElectionRequest) returns (ElectionResponse);
+  rpc Coordinator (CoordinatorRequest) returns (CoordinatorResponse);
 }
 
 message BlocoImagemRequest {
-    int32 id_bloco = 1;
-    int32 largura = 2;
-    int32 altura = 3;
-    bytes imagem = 4;
-    int64 timestamp = 5;
-
-    int32 n_segmentos = 6;
-    float compactness = 7;
+  int32 id_bloco = 1;
+  int32 largura = 2;
+  int32 altura = 3;
+  bytes imagem = 4;
+  int64 timestamp = 5;
+  int32 n_segmentos = 6;
+  float compactness = 7;
 }
 
 message BlocoImagemResponse {
@@ -31,4 +32,22 @@ message StatusRequest {}
 message StatusResponse {
   string status = 1;
   string nome_maquina = 2;
+}
+
+
+message ElectionRequest {
+  int32 sender_id = 1;
+}
+
+message ElectionResponse {
+  bool alive = 1;
+}
+
+message CoordinatorRequest {
+  int32 leader_id = 1;
+  string leader_address = 2;
+}
+
+message CoordinatorResponse {
+  bool acknowledged = 1;
 }

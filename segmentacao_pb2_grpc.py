@@ -44,6 +44,16 @@ class SegmentacaoServiceStub(object):
                 request_serializer=segmentacao__pb2.StatusRequest.SerializeToString,
                 response_deserializer=segmentacao__pb2.StatusResponse.FromString,
                 _registered_method=True)
+        self.Election = channel.unary_unary(
+                '/segmentacao.SegmentacaoService/Election',
+                request_serializer=segmentacao__pb2.ElectionRequest.SerializeToString,
+                response_deserializer=segmentacao__pb2.ElectionResponse.FromString,
+                _registered_method=True)
+        self.Coordinator = channel.unary_unary(
+                '/segmentacao.SegmentacaoService/Coordinator',
+                request_serializer=segmentacao__pb2.CoordinatorRequest.SerializeToString,
+                response_deserializer=segmentacao__pb2.CoordinatorResponse.FromString,
+                _registered_method=True)
 
 
 class SegmentacaoServiceServicer(object):
@@ -61,6 +71,18 @@ class SegmentacaoServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Election(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Coordinator(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SegmentacaoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +95,16 @@ def add_SegmentacaoServiceServicer_to_server(servicer, server):
                     servicer.Status,
                     request_deserializer=segmentacao__pb2.StatusRequest.FromString,
                     response_serializer=segmentacao__pb2.StatusResponse.SerializeToString,
+            ),
+            'Election': grpc.unary_unary_rpc_method_handler(
+                    servicer.Election,
+                    request_deserializer=segmentacao__pb2.ElectionRequest.FromString,
+                    response_serializer=segmentacao__pb2.ElectionResponse.SerializeToString,
+            ),
+            'Coordinator': grpc.unary_unary_rpc_method_handler(
+                    servicer.Coordinator,
+                    request_deserializer=segmentacao__pb2.CoordinatorRequest.FromString,
+                    response_serializer=segmentacao__pb2.CoordinatorResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +161,60 @@ class SegmentacaoService(object):
             '/segmentacao.SegmentacaoService/Status',
             segmentacao__pb2.StatusRequest.SerializeToString,
             segmentacao__pb2.StatusResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Election(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/segmentacao.SegmentacaoService/Election',
+            segmentacao__pb2.ElectionRequest.SerializeToString,
+            segmentacao__pb2.ElectionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Coordinator(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/segmentacao.SegmentacaoService/Coordinator',
+            segmentacao__pb2.CoordinatorRequest.SerializeToString,
+            segmentacao__pb2.CoordinatorResponse.FromString,
             options,
             channel_credentials,
             insecure,
