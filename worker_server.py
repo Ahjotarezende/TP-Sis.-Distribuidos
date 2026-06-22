@@ -57,7 +57,7 @@ def iniciar_eleicao(minha_porta: int) -> None:
             return
         _election_in_progress = True
 
-    print(f"[Eleição] Nó :{minha_porta} iniciando eleição (Bully)")
+    print(f"[Eleição] Nó :{minha_porta} iniciando eleição")
 
     meu_id = minha_porta
     peers_maiores = [w for w in WORKERS if _get_id(w) > meu_id]
