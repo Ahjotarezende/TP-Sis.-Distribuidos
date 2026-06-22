@@ -17,7 +17,7 @@ WORKERS = [
 CAMINHO_IMAGEM = "teste.jpg"
 CAMINHO_SAIDA = "resultado_segmentado.jpg"
 
-MAXIMO_SEGMENTOS = 1000
+MAXIMO_SEGMENTOS = 300
 COMPACTNESS = 10.0
 
 PEER_TIMEOUT = 5
@@ -41,6 +41,7 @@ def _make_channel(address: str):
         ],
     )
 
+
 def _aguardar_workers(workers, tentativas=10, intervalo=2.0):
     online = []
     for w in workers:
@@ -58,6 +59,7 @@ def _aguardar_workers(workers, tentativas=10, intervalo=2.0):
         else:
             print(f"[Init] {w} ignorado")
     return online
+
 
 def _disparar_eleicao(workers_online):
     global _leader_address, _leader_id
@@ -112,6 +114,7 @@ def _re_eleger(workers_online):
 
         return _disparar_eleicao([w for w in workers_online if w != lider])
 
+
 def dividir_imagem_em_blocos(img, n):
     h = img.shape[0]
     step = h // n
@@ -124,8 +127,9 @@ def dividir_imagem_em_blocos(img, n):
 
     return blocos
 
+
 def _tentar_worker(addr, id_bloco, bloco, clock, n_seg, comp, max_tent=3):
-    for t in range(max_tent):
+    for _ in range(max_tent):
         canal = None
         try:
             canal = _make_channel(addr)
@@ -144,7 +148,6 @@ def _tentar_worker(addr, id_bloco, bloco, clock, n_seg, comp, max_tent=3):
             )
 
             resp = stub.ProcessarBloco(req, timeout=30)
-
             clock.update(resp.timestamp)
 
             img = Image.frombytes(
@@ -163,6 +166,7 @@ def _tentar_worker(addr, id_bloco, bloco, clock, n_seg, comp, max_tent=3):
                 canal.close()
 
     return None
+
 
 def enviar_bloco_com_failover(
     id_bloco,
@@ -200,6 +204,7 @@ def enviar_bloco_com_failover(
 
     return None
 
+
 def processar_imagem_distribuida(
     imagem_array,
     workers=None,
@@ -226,7 +231,6 @@ def processar_imagem_distribuida(
     resultados = []
 
     for i, (worker, (idb, ini, fim, bloco)) in enumerate(zip(workers_online, blocos)):
-
         res = enviar_bloco_com_failover(
             idb,
             bloco,
@@ -246,10 +250,10 @@ def processar_imagem_distribuida(
             progresso_callback(i + 1, len(workers_online))
 
     resultados.sort(key=lambda x: x[0])
-
     final = np.vstack([b for _, _, b in resultados])
 
     return final, time.time() - inicio
+
 
 def main():
     img = Image.open(CAMINHO_IMAGEM).convert("RGB")

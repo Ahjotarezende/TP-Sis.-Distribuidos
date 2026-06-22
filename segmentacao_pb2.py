@@ -4,11 +4,13 @@
 # source: segmentacao.proto
 # Protobuf Python Version: 6.31.1
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
     _runtime_version.Domain.PUBLIC,
     6,
@@ -17,36 +19,35 @@ _runtime_version.ValidateProtobufRuntimeVersion(
     '',
     'segmentacao.proto'
 )
-# @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
-
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11segmentacao.proto\x12\x0bsegmentacao\"\x94\x01\n\x12\x42locoImagemRequest\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06\x61ltura\x18\x03 \x01(\x05\x12\x0e\n\x06imagem\x18\x04 \x01(\x0c\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\x12\x13\n\x0bn_segmentos\x18\x06 \x01(\x05\x12\x13\n\x0b\x63ompactness\x18\x07 \x01(\x02\"v\n\x13\x42locoImagemResponse\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06\x61ltura\x18\x03 \x01(\x05\x12\x19\n\x11imagem_segmentada\x18\x04 \x01(\x0c\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\"\x0f\n\rStatusRequest\"6\n\x0eStatusResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x14\n\x0cnome_maquina\x18\x02 \x01(\t\"$\n\x0f\x45lectionRequest\x12\x11\n\tsender_id\x18\x01 \x01(\x05\"!\n\x10\x45lectionResponse\x12\r\n\x05\x61live\x18\x01 \x01(\x08\"?\n\x12\x43oordinatorRequest\x12\x11\n\tleader_id\x18\x01 \x01(\x05\x12\x16\n\x0eleader_address\x18\x02 \x01(\t\"+\n\x13\x43oordinatorResponse\x12\x14\n\x0c\x61\x63knowledged\x18\x01 \x01(\x08\x32\xc7\x02\n\x12SegmentacaoService\x12S\n\x0eProcessarBloco\x12\x1f.segmentacao.BlocoImagemRequest\x1a .segmentacao.BlocoImagemResponse\x12\x41\n\x06Status\x12\x1a.segmentacao.StatusRequest\x1a\x1b.segmentacao.StatusResponse\x12G\n\x08\x45lection\x12\x1c.segmentacao.ElectionRequest\x1a\x1d.segmentacao.ElectionResponse\x12P\n\x0b\x43oordinator\x12\x1f.segmentacao.CoordinatorRequest\x1a .segmentacao.CoordinatorResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x11segmentacao.proto\x12\x0bsegmentacao"\x94\x01\n\x12BlocoImagemRequest\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06altura\x18\x03 \x01(\x05\x12\x0e\n\x06imagem\x18\x04 \x01(\x0c\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\x12\x13\n\x0bn_segmentos\x18\x06 \x01(\x05\x12\x13\n\x0bcompactness\x18\x07 \x01(\x02"\x76\n\x13BlocoImagemResponse\x12\x10\n\x08id_bloco\x18\x01 \x01(\x05\x12\x0f\n\x07largura\x18\x02 \x01(\x05\x12\x0e\n\x06altura\x18\x03 \x01(\x05\x12\x19\n\x11imagem_segmentada\x18\x04 \x01(\x0c\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\"\x0f\n\rStatusRequest\"6\n\x0eStatusResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x14\n\x0cnome_maquina\x18\x02 \x01(\t\"\x24\n\x0fElectionRequest\x12\x11\n\tsender_id\x18\x01 \x01(\x05\"!\n\x10ElectionResponse\x12\r\n\x05alive\x18\x01 \x01(\x08\"?\n\x12CoordinatorRequest\x12\x11\n\tleader_id\x18\x01 \x01(\x05\x12\x16\n\x0eleader_address\x18\x02 \x01(\t\"+\n\x13CoordinatorResponse\x12\x14\n\x0cacknowledged\x18\x01 \x01(\x08\x32\xc7\x02\n\x12SegmentacaoService\x12S\n\x0eProcessarBloco\x12\x1f.segmentacao.BlocoImagemRequest\x1a .segmentacao.BlocoImagemResponse\x12\x41\n\x06Status\x12\x1a.segmentacao.StatusRequest\x1a\x1b.segmentacao.StatusResponse\x12G\n\x08Election\x12\x1c.segmentacao.ElectionRequest\x1a\x1d.segmentacao.ElectionResponse\x12P\n\x0bCoordinator\x12\x1f.segmentacao.CoordinatorRequest\x1a .segmentacao.CoordinatorResponseb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'segmentacao_pb2', _globals)
+
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_BLOCOIMAGEMREQUEST']._serialized_start=35
-  _globals['_BLOCOIMAGEMREQUEST']._serialized_end=183
-  _globals['_BLOCOIMAGEMRESPONSE']._serialized_start=185
-  _globals['_BLOCOIMAGEMRESPONSE']._serialized_end=303
-  _globals['_STATUSREQUEST']._serialized_start=305
-  _globals['_STATUSREQUEST']._serialized_end=320
-  _globals['_STATUSRESPONSE']._serialized_start=322
-  _globals['_STATUSRESPONSE']._serialized_end=376
-  _globals['_ELECTIONREQUEST']._serialized_start=378
-  _globals['_ELECTIONREQUEST']._serialized_end=414
-  _globals['_ELECTIONRESPONSE']._serialized_start=416
-  _globals['_ELECTIONRESPONSE']._serialized_end=449
-  _globals['_COORDINATORREQUEST']._serialized_start=451
-  _globals['_COORDINATORREQUEST']._serialized_end=514
-  _globals['_COORDINATORRESPONSE']._serialized_start=516
-  _globals['_COORDINATORRESPONSE']._serialized_end=559
-  _globals['_SEGMENTACAOSERVICE']._serialized_start=562
-  _globals['_SEGMENTACAOSERVICE']._serialized_end=889
-# @@protoc_insertion_point(module_scope)
+    DESCRIPTOR._loaded_options = None
+
+    _globals['_BLOCOIMAGEMREQUEST']._serialized_start = 35
+    _globals['_BLOCOIMAGEMREQUEST']._serialized_end = 183
+    _globals['_BLOCOIMAGEMRESPONSE']._serialized_start = 185
+    _globals['_BLOCOIMAGEMRESPONSE']._serialized_end = 303
+    _globals['_STATUSREQUEST']._serialized_start = 305
+    _globals['_STATUSREQUEST']._serialized_end = 320
+    _globals['_STATUSRESPONSE']._serialized_start = 322
+    _globals['_STATUSRESPONSE']._serialized_end = 376
+    _globals['_ELECTIONREQUEST']._serialized_start = 378
+    _globals['_ELECTIONREQUEST']._serialized_end = 414
+    _globals['_ELECTIONRESPONSE']._serialized_start = 416
+    _globals['_ELECTIONRESPONSE']._serialized_end = 449
+    _globals['_COORDINATORREQUEST']._serialized_start = 451
+    _globals['_COORDINATORREQUEST']._serialized_end = 514
+    _globals['_COORDINATORRESPONSE']._serialized_start = 516
+    _globals['_COORDINATORRESPONSE']._serialized_end = 559
+    _globals['_SEGMENTACAOSERVICE']._serialized_start = 562
+    _globals['_SEGMENTACAOSERVICE']._serialized_end = 889
